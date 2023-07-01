@@ -1,13 +1,12 @@
 import os
-from pyexiv2 import Image
 import sys
+from pyexiv2 import Image
 from PyQt6.QtWidgets import (
     QApplication,
     QLabel,
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
-    QTextEdit,
     QGridLayout,
     QScrollArea,
 )
@@ -24,6 +23,8 @@ class MyApp(QWidget):
         self.setStyleSheet("background-color: #1A1A1A;")
         self.setWindowTitle("Python QLabel")
         self.setWindowIcon(QIcon("icons/icon.png"))
+        self.setMaximumWidth(1500)
+        self.setMinimumWidth(1500)
 
         # self.starResourceList = [
         #     self.loadImg("./icons/star_empty.png", w=16, h=16),
@@ -40,20 +41,19 @@ class MyApp(QWidget):
 
         scroll_area_plan = QWidget()
         scroll_area_plan.setLayout(gallery_layout)
+        scroll_area_plan.setFixedWidth(1500)
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll_area.setWidget(scroll_area_plan)
-        scroll_area.setStyleSheet("background-color:white;")
+        # scroll_area.setStyleSheet("background-color:white;")
 
         main_layout.addWidget(scroll_area)
         # main_layout.addLayout(gallery_layout)
 
         self.setLayout(main_layout)
-
-    def isImage(self, file):
-        return file.lower().endswith(image_format)
 
     def galleryLayout(self):
         gallery_layout = QVBoxLayout()
@@ -77,11 +77,11 @@ class MyApp(QWidget):
         files = os.listdir("./images")
 
         row, column = 0, 0
-        for file in files:
-            img_layout.addWidget(self.imgWidget(f"./images/{file}"), row, column)
+        for file_name in files:
+            img_layout.addWidget(self.imgWidget(f"./images/{file_name}"), row, column)
             column += 1
             print()
-            if column == 3:
+            if column == 5:
                 row += 1
                 column = 0
             # img_layout.addWidget(img_label, row, column)
@@ -91,14 +91,13 @@ class MyApp(QWidget):
 
         return gallery_layout
 
-    #
-    def imgWidget(self, img):
+    def imgWidget(self, file_name):
         widget = QWidget()
         widget.setFixedWidth(300)
         widget.setFixedHeight(350)
         widget.setStyleSheet("border: 0px")
 
-        _img = self.loadImg(img)
+        _img, _rating = self.loadImg(file_name)
         _img.setStyleSheet("border: 0px")
 
         img_layout = QHBoxLayout()
@@ -106,97 +105,95 @@ class MyApp(QWidget):
         img_layout.addWidget(_img, alignment=Qt.AlignmentFlag.AlignCenter)
         widget.setLayout(img_layout)
 
-        rating = self.starWidget(self.readRating(img))
+        rating = self.starWidget(_rating)
         rating.setStyleSheet("color:black; border: 0px")
         rating.setFixedSize(300, 50)
 
-        outerLayout = QVBoxLayout()
-        outerLayout.addWidget(widget)
-        outerLayout.addWidget(rating, alignment=Qt.AlignmentFlag.AlignCenter)
-        outerLayout.setContentsMargins(2, 2, 2, 2)
+        outer_layout = QVBoxLayout()
+        outer_layout.addWidget(widget)
+        outer_layout.addWidget(rating, alignment=Qt.AlignmentFlag.AlignCenter)
+        outer_layout.setContentsMargins(2, 2, 2, 2)
 
-        outerBox = QWidget()
-        outerBox.setLayout(outerLayout)
-        outerBox.setFixedWidth(303)
-        outerBox.setFixedHeight(400)
-        outerBox.setStyleSheet("background-color: #1A1A1A; border: 1px solid #696969;")
+        outer_box = QWidget()
+        outer_box.setLayout(outer_layout)
+        outer_box.setFixedWidth(303)
+        outer_box.setFixedHeight(400)
+        outer_box.setStyleSheet("background-color: #1A1A1A; border: 1px solid #696969;")
 
-        return outerBox
+        return outer_box
 
     def starWidget(self, rating):
-        starLayout = QHBoxLayout()
-        starBox = QWidget()
-        starBox.setLayout(starLayout)
+        star_layout = QHBoxLayout()
+        star_box = QWidget()
+        star_box.setLayout(star_layout)
 
-        starLayout.addStretch(1)
+        star_layout.addStretch(1)
 
         for i in range(1, 6):
             imgSrc = 1 if i <= rating else 0
 
-            self.starResourceList = [
-                self.loadImg("./icons/star_empty.png", w=16, h=16),
-                self.loadImg("./icons/star.png", w=16, h=16),
+            self.star_resourceList = [
+                self.loadImg("./icons/star_empty.png", w=16, h=16, is_picture=False),
+                self.loadImg("./icons/star.png", w=16, h=16, is_picture=False),
             ]
 
-            starLayout.addWidget(
-                self.starResourceList[imgSrc], alignment=Qt.AlignmentFlag.AlignCenter
+            star_layout.addWidget(
+                self.star_resourceList[imgSrc], alignment=Qt.AlignmentFlag.AlignCenter
             )
-            starLayout.addStretch(0)
+            star_layout.addStretch(0)
 
-        starLayout.addStretch(1)
+        star_layout.addStretch(1)
 
-        return starBox
+        return star_box
 
-    def loadImg(self, file, w=300, h=350):
-        # print(f"Loading image {file}")
+    def loadImg(self, file_name, w=300, h=350, is_picture=True):
+        print(f"Loading image {file_name}")
+
+        img_data = file_name
+        rating = 0
+
+        qpixmap = QPixmap()
+
+        if is_picture:
+            picture = self.Picture(file_name)
+            img_data = picture.loadThumbnail()
+            rating = picture.loadRating()
+            qpixmap.loadFromData(img_data)
+
+        else:
+            qpixmap.load(img_data)
+
         label = QLabel(self)
 
-        origin_image = QPixmap(f"{file}")
-        scale_image = origin_image.scaled(
+        qpixmap.scaled(
             w,
             h,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )  # width, height
-        label.setPixmap(scale_image)
+        label.setPixmap(qpixmap)
 
-        return label
+        if is_picture:
+            return label, rating
+        else:
+            return label
 
-    def readRating(self, file):
-        if self.isImage(file):
-            # print(jpg_file)
-            img = Image(file)
-            xmp_data = img.read_xmp()
-            img.close()
-        print(int(xmp_data["Xmp.xmp.Rating"]))
-        return int(xmp_data["Xmp.xmp.Rating"])
+    class Picture:
+        def __init__(self, file_name):
+            if self.isImage(file_name):
+                self.imgData = Image(file_name)
 
+        def loadThumbnail(self):
+            # my_image = exifImage(self.imgData)
+            return self.imgData.read_thumbnail()
 
-class TestAPP(QWidget):
-    def __init__(self):
-        super().__init__()
+        def loadRating(self):
+            xmp_data = self.imgData.read_xmp()
+            print(f"xmpdata {xmp_data['Xmp.xmp.Rating']}")
+            return int(xmp_data["Xmp.xmp.Rating"])
 
-        # Create a main widget and set it as the central widget
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
-
-        # Create a QVBoxLayout for the main layout
-        main_layout = QVBoxLayout()
-        main_widget.setLayout(main_layout)
-
-        # Create a QTextEdit widget
-        text_edit = QTextEdit()
-        main_layout.addWidget(text_edit)
-
-        # Append some text to the QTextEdit
-        text_edit.append("Line 1")
-        text_edit.append("Line 2")
-        text_edit.append("Line 3")
-        text_edit.append("Line 4")
-
-        # Scroll down programmatically
-        scroll_bar = text_edit.verticalScrollBar()
-        scroll_bar.setValue(scroll_bar.maximum())
+        def isImage(self, file_name):
+            return file_name.lower().endswith(image_format)
 
 
 if __name__ == "__main__":
