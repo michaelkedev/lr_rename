@@ -75,7 +75,7 @@ class MyApp(QWidget):
         img_layout.setContentsMargins(0, 0, 0, 0)
 
         files = os.listdir("./images")
-        img_per_row, img_count = 5, 0
+
         row, column = 0, 0
         for file in files:
             img_layout.addWidget(self.imgWidget(f"./images/{file}"), row, column)
