@@ -157,10 +157,6 @@ class MyApp(QWidget):
             h,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
-            # bilinear filtering.
-            # Qt::IgnoreAspectRatio	0	The size is scaled freely. The aspect ratio is not preserved.
-            # Qt::KeepAspectRatio	1	The size is scaled to a rectangle as large as possible inside a given rectangle, preserving the aspect ratio.
-            # Qt::KeepAspectRatioByExpanding	2	The size is scaled to a rectangle as small as possible outside a given rectangle, preserving the aspect ratio.
         )  # width, height
         label.setPixmap(scale_image)
 
