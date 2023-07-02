@@ -1,5 +1,6 @@
 import os
 import sys
+import monitorInfo
 import ctypes
 from pyexiv2 import Image
 from PyQt6.QtWidgets import (
@@ -26,8 +27,8 @@ class MyApp(QWidget):
         self.setWindowIcon(QIcon("icons/icon.png"))
         self.setMaximumWidth(1500)
         self.setMinimumWidth(1500)
-        self.setMaximumHeight(1000)
-        self.setMinimumHeight(1000)
+        self.setMaximumHeight(monitorInfo.getWorkAreaHeight() - 32)
+        self.setMinimumHeight(monitorInfo.getWorkAreaHeight() - 32)
 
         # self.starResourceList = [
         #     self.loadImg("./icons/star_empty.png", w=16, h=16),
@@ -62,19 +63,15 @@ class MyApp(QWidget):
 
         return scroll_area
 
-    def getScreenInfo(self):
-        desktop = QScreen()
-        screen_geometry = desktop.screenGeometry()
-        screen_height = screen_geometry.height()
-
-        return screen_height
+    def ratingFilter(self, score):
+        return filter(lambda x: (x.getRating() == score), self.picture_list)
 
     def galleryLayout(self):
         gallery_layout = QVBoxLayout()
         gallery_layout.setContentsMargins(0, 0, 0, 0)
         gallery_layout.setSpacing(0)
 
-        title = QLabel("Images")
+        title = QLabel("Score")
         title.setContentsMargins(20, 0, 0, 0)
         title.setFixedSize(1500, 50)  # width, height
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -89,6 +86,12 @@ class MyApp(QWidget):
         img_layout.setContentsMargins(0, 0, 0, 0)
 
         files = os.listdir("./images")
+        self.picture_list = []
+
+        # even_numbers_iterator = filter(lambda x: (x%2 == 0), numbers)
+        for file in files:
+            picture_info = self.PictureInfo(f"./images/{file}")
+            self.picture_list.append(picture_info)
 
         row, column = 0, 0
         for file_name in files:
@@ -194,8 +197,12 @@ class MyApp(QWidget):
 
     class PictureInfo:
         def __init__(self, file_name):
+            self.file_name = file_name
             if self.isImage(file_name):
                 self.imgData = Image(file_name)
+
+        def getFileName(self):
+            return self.file_name
 
         def getThumbnail(self):
             # my_image = exifImage(self.imgData)
@@ -217,6 +224,7 @@ class MyApp(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    print(sys.argv)
 
     my_app_id = "michael.lr_rename.v1.0"
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
