@@ -1,5 +1,6 @@
 import os
 import sys
+import ctypes
 from pyexiv2 import Image
 from PyQt6.QtWidgets import (
     QApplication,
@@ -11,7 +12,7 @@ from PyQt6.QtWidgets import (
     QScrollArea,
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QFont, QPixmap, QMovie
+from PyQt6.QtGui import QIcon, QFont, QPixmap, QMovie, QScreen
 from PyQt6 import uic
 
 image_format = ("jpg", "jpeg", "png")
@@ -25,6 +26,8 @@ class MyApp(QWidget):
         self.setWindowIcon(QIcon("icons/icon.png"))
         self.setMaximumWidth(1500)
         self.setMinimumWidth(1500)
+        self.setMaximumHeight(1000)
+        self.setMinimumHeight(1000)
 
         # self.starResourceList = [
         #     self.loadImg("./icons/star_empty.png", w=16, h=16),
@@ -38,9 +41,16 @@ class MyApp(QWidget):
         )
 
         gallery_layout = self.galleryLayout()
+        scroll_area = self.scollArea(gallery_layout)
 
+        main_layout.addWidget(scroll_area)
+        # main_layout.addLayout(gallery_layout)
+
+        self.setLayout(main_layout)
+
+    def scollArea(self, layout):
         scroll_area_plan = QWidget()
-        scroll_area_plan.setLayout(gallery_layout)
+        scroll_area_plan.setLayout(layout)
         scroll_area_plan.setFixedWidth(1500)
 
         scroll_area = QScrollArea()
@@ -50,10 +60,14 @@ class MyApp(QWidget):
         scroll_area.setWidget(scroll_area_plan)
         # scroll_area.setStyleSheet("background-color:white;")
 
-        main_layout.addWidget(scroll_area)
-        # main_layout.addLayout(gallery_layout)
+        return scroll_area
 
-        self.setLayout(main_layout)
+    def getScreenInfo(self):
+        desktop = QScreen()
+        screen_geometry = desktop.screenGeometry()
+        screen_height = screen_geometry.height()
+
+        return screen_height
 
     def galleryLayout(self):
         gallery_layout = QVBoxLayout()
@@ -63,7 +77,7 @@ class MyApp(QWidget):
         title = QLabel("Images")
         title.setContentsMargins(20, 0, 0, 0)
         title.setFixedSize(1500, 50)  # width, height
-        # title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # title.setText
         title.setStyleSheet(
             "background-color: #1A1A1A; color : white; font-weight:black; font-size: 20px"
@@ -147,7 +161,7 @@ class MyApp(QWidget):
         return star_box
 
     def loadImg(self, file_name, w=300, h=350, is_picture=True):
-        print(f"Loading image {file_name}")
+        # print(f"Loading image {file_name}")
 
         img_data = file_name
         rating = 0
@@ -155,9 +169,9 @@ class MyApp(QWidget):
         qpixmap = QPixmap()
 
         if is_picture:
-            picture = self.Picture(file_name)
-            img_data = picture.loadThumbnail()
-            rating = picture.loadRating()
+            picture = self.PictureInfo(file_name)
+            img_data = picture.getThumbnail()
+            rating = picture.getRating()
             qpixmap.loadFromData(img_data)
 
         else:
@@ -178,19 +192,24 @@ class MyApp(QWidget):
         else:
             return label
 
-    class Picture:
+    class PictureInfo:
         def __init__(self, file_name):
             if self.isImage(file_name):
                 self.imgData = Image(file_name)
 
-        def loadThumbnail(self):
+        def getThumbnail(self):
             # my_image = exifImage(self.imgData)
             return self.imgData.read_thumbnail()
 
-        def loadRating(self):
+        def getRating(self):
             xmp_data = self.imgData.read_xmp()
-            print(f"xmpdata {xmp_data['Xmp.xmp.Rating']}")
-            return int(xmp_data["Xmp.xmp.Rating"])
+            # print(f"xmpdata {xmp_data['Xmp.xmp.Rating']}")
+            print(
+                int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0
+            )
+            return (
+                int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0
+            )
 
         def isImage(self, file_name):
             return file_name.lower().endswith(image_format)
@@ -199,6 +218,8 @@ class MyApp(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
+    my_app_id = "michael.lr_rename.v1.0"
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
     myApp = MyApp()
 
     myApp.showMaximized()
