@@ -7,3 +7,11 @@
 
 - 針對 lightroom 的 rating 進行分類，顯示在 GUI 上
 - 透過 GUI 輸出照片到指定資料夾
+
+## 未來新增
+
+- Drive API 備份照片到雲端
+
+## Contributors
+
+- [huibizhang](https://github.com/huibizhang)
