@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QMessageBox,
+    QFileDialog,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
@@ -47,7 +48,7 @@ class MyQLabel(QLabel):
         self.show()
         line_edit.deleteLater()
 
-        print(title_name)
+        # print(title_name)
 
 
 class MyApp(QWidget):
@@ -83,7 +84,7 @@ class MyApp(QWidget):
                 )
             )
 
-        btn_widget = self.buttonWidget()
+        btn_widget = self.buttonWidget(self.outputToSelectedFolder)
         scroll_area = self.scollArea(layout)
 
         main_layout.addWidget(scroll_area)
@@ -252,7 +253,7 @@ class MyApp(QWidget):
 
         return star_box
 
-    def buttonWidget(self):
+    def buttonWidget(self, clickEvent):
         btn = QPushButton("Start Processing")
         btn.setFixedSize(200, 40)
         btn.setStyleSheet(
@@ -277,9 +278,37 @@ class MyApp(QWidget):
         btn_layout.addWidget(btn)
         btn_widget.setLayout(btn_layout)
 
-        btn.clicked.connect(self.handleButtonClick)
+        btn.clicked.connect(clickEvent)
 
         return btn_widget
+
+    def outputToSelectedFolder(self):
+        folder_dialog = QFileDialog()
+        folder_dialog.setFileMode(
+            QFileDialog.FileMode.Directory
+        )  # allow the user to select a directory
+        folder_dialog.setOption(
+            QFileDialog.Option.ShowDirsOnly, True
+        )  # show only directories
+        folder_dialog.setAcceptMode(
+            QFileDialog.AcceptMode.AcceptOpen
+        )  # accept only the selection of existing directories.
+
+        if folder_dialog.exec() == QFileDialog.DialogCode.Accepted:
+            select_folder = folder_dialog.selectedFiles()[0]
+            print(select_folder)
+
+            for picture in self.picture_list:
+                path = f"{picture.getFileName().split('/')[0]}/{picture.getFileName().split('/')[1]}"
+                file_name = picture.getFileName().split("/")[-1]
+                rating = picture.getRating()
+                new_name = f"{select_folder}/{title_name[5-rating]}_{file_name}"
+
+                print(new_name)
+                os.rename(picture.getFileName(), new_name)
+
+            message_box = self.messgeBox()
+            message_box.exec()
 
     def handleButtonClick(self):
         for picture in self.picture_list:
@@ -317,7 +346,7 @@ class MyApp(QWidget):
             h,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
-        )  # width, height
+        )
         label.setPixmap(qpixmap)
 
         if is_picture:
@@ -342,7 +371,7 @@ class PictureInfo:
     def getRating(self):
         xmp_data = self.imgData.read_xmp()
         # print(f"xmpdata {xmp_data['Xmp.xmp.Rating']}")
-        print(int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0)
+        # print(int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0)
         return int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0
 
     def isImage(self, file_name):
