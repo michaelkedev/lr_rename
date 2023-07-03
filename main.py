@@ -12,12 +12,41 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGridLayout,
     QScrollArea,
+    QLineEdit,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QMovie, QScreen
 from PyQt6 import uic
 
 image_format = ("jpg", "jpeg", "png")
+
+title_name = ["A", "B", "C", "D", "E", "F"]  # 5 --> 0
+
+
+class MyQLabel(QLabel):
+    def __init__(self, rating):
+        super().__init__(str(rating))
+        self.rating = rating
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            line_edit = QLineEdit(self.text(), self.parent())
+            line_edit.setGeometry(self.geometry())
+            line_edit.setStyleSheet(self.styleSheet())
+            line_edit.setFocus()
+            line_edit.editingFinished.connect(self.handleEditingFinished)
+            self.hide()
+            line_edit.show()
+
+    def handleEditingFinished(self):
+        line_edit = self.sender()
+        new_text = line_edit.text()
+        title_name[5 - self.rating] = new_text
+        self.setText(new_text)
+        self.show()
+        line_edit.deleteLater()
+
+        print(title_name)
 
 
 class MyApp(QWidget):
@@ -30,7 +59,7 @@ class MyApp(QWidget):
         self.setMinimumWidth(1520)
         self.setMaximumHeight(monitorInfo.getWorkAreaHeight() - 32)
         self.setMinimumHeight(monitorInfo.getWorkAreaHeight() - 32)
-
+        self.picture_list = []
         # self.starResourceList = [
         #     self.loadImg("./icons/star_empty.png", w=16, h=16),
         #     self.loadImg("./icons/star.png", w=16, h=16),
@@ -43,11 +72,12 @@ class MyApp(QWidget):
         )
 
         layout = QVBoxLayout()
+        layout.setSpacing(10)
 
         for score in range(0, 6):
             layout.addLayout(
                 self.galleryLayout(
-                    self.ratingFilter(score, self.getPictureList("./images"))
+                    self.ratingFilter(5 - score, self.getPictureList("./images"))
                 )
             )
 
@@ -75,28 +105,49 @@ class MyApp(QWidget):
         return list(filter(lambda x: (x.getRating() == score), picture_list))
 
     def getPictureList(self, path="./images/"):
-        picture_list = []
+        self.picture_list = []
         files = os.listdir(path)
 
         for file in files:
             picture_info = self.PictureInfo(f"{path}/{file}")
-            picture_list.append(picture_info)
+            self.picture_list.append(picture_info)
 
-        return picture_list
+        return self.picture_list
 
     def galleryLayout(self, picture_list=[]):
         gallery_layout = QVBoxLayout()
         gallery_layout.setContentsMargins(0, 0, 0, 0)
         gallery_layout.setSpacing(0)
 
-        title = QLabel(str(picture_list[0].getRating()))
-        title.setContentsMargins(20, 0, 0, 0)
-        title.setFixedSize(1500, 50)  # width, height
-        title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        # title.setText
-        title.setStyleSheet(
-            "background-color: #1A1A1A; color : white; font-weight:black; font-size: 20px"
+        rating = picture_list[0].getRating()
+
+        file_count = QLabel(f"{len(picture_list)} 個項目")
+        file_count.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
+        file_count.setStyleSheet(
+            "font-weight:normal; font-size: 14px;  border: 0px; color: #696969"
+        )
+
+        title = MyQLabel(rating)
+
+        title.setContentsMargins(20, 0, 0, 0)
+        # title.setFixedSize(1486, 50)  # width, height
+        title.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        title.setStyleSheet("border: 0px")
+        # title.setText
+
+        title_bar_layout = QHBoxLayout()
+        title_bar_layout.addWidget(title)
+        title_bar_layout.addWidget(file_count)
+
+        title_bar_widget = QWidget()
+        title_bar_widget.setLayout(title_bar_layout)
+        title_bar_widget.setFixedSize(1486, 50)
+        title_bar_widget.setStyleSheet(
+            "background-color: #292929; color : white; font-weight:black; font-size: 20px;border:1px solid #696969"
+        )
+
         # title = self.starWidget(picture_list[0].getRating())
         # title.setFixedHeight(10)
 
@@ -124,7 +175,7 @@ class MyApp(QWidget):
                 row += 1
                 column = 0  # row, column = 0, 0
 
-        gallery_layout.addWidget(title)
+        gallery_layout.addWidget(title_bar_widget)
         gallery_layout.addLayout(img_layout)
 
         return gallery_layout
