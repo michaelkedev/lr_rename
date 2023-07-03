@@ -13,10 +13,11 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QScrollArea,
     QLineEdit,
+    QPushButton,
+    QMessageBox,
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QFont, QPixmap, QMovie, QScreen
-from PyQt6 import uic
+from PyQt6.QtGui import QIcon, QPixmap
 
 image_format = ("jpg", "jpeg", "png")
 
@@ -52,6 +53,8 @@ class MyQLabel(QLabel):
 class MyApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.picture_list = []
+
         self.setStyleSheet("background-color: #1A1A1A;")
         self.setWindowTitle("Python QLabel")
         self.setWindowIcon(QIcon("icons/icon.png"))
@@ -59,7 +62,6 @@ class MyApp(QWidget):
         self.setMinimumWidth(1520)
         self.setMaximumHeight(monitorInfo.getWorkAreaHeight() - 32)
         self.setMinimumHeight(monitorInfo.getWorkAreaHeight() - 32)
-        self.picture_list = []
         # self.starResourceList = [
         #     self.loadImg("./icons/star_empty.png", w=16, h=16),
         #     self.loadImg("./icons/star.png", w=16, h=16),
@@ -81,11 +83,26 @@ class MyApp(QWidget):
                 )
             )
 
+        btn_widget = self.buttonWidget()
         scroll_area = self.scollArea(layout)
 
         main_layout.addWidget(scroll_area)
+        main_layout.addWidget(btn_widget)
 
         self.setLayout(main_layout)
+
+    def messgeBox(self):
+        message_box = QMessageBox()
+        message_box.setWindowIcon(QIcon("icons/icon.png"))
+        message_box.setIcon(QMessageBox.Icon.Information)
+        message_box.setIcon
+        message_box.setWindowTitle("Finished ")
+        message_box.setText("Finished processing")
+        message_box.setStyleSheet(
+            "font-size: 14px; color: white; background-color: #1A1A1A"
+        )
+
+        return message_box
 
     def scollArea(self, layout):
         scroll_area_plan = QWidget()
@@ -109,7 +126,7 @@ class MyApp(QWidget):
         files = os.listdir(path)
 
         for file in files:
-            picture_info = self.PictureInfo(f"{path}/{file}")
+            picture_info = PictureInfo(f"{path}/{file}")
             self.picture_list.append(picture_info)
 
         return self.picture_list
@@ -126,7 +143,7 @@ class MyApp(QWidget):
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
         file_count.setStyleSheet(
-            "font-weight:normal; font-size: 14px;  border: 0px; color: #696969"
+            "font-weight:normal; font-size: 14px; border: 0px; color: #696969"
         )
 
         title = MyQLabel(rating)
@@ -235,6 +252,47 @@ class MyApp(QWidget):
 
         return star_box
 
+    def buttonWidget(self):
+        btn = QPushButton("Start Processing")
+        btn.setFixedSize(200, 40)
+        btn.setStyleSheet(
+            """
+            QPushButton {
+                color:white; background: #1d4ed8; border-radius: 8px;
+            }
+            QPushButton:hover {
+                background: #2563eb;
+            }
+            QPushButton:pressed {
+                background: #1e40af;
+            }
+        """
+        )
+        btn_widget = QWidget()
+        btn_widget.setFixedHeight(60)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setContentsMargins(10, 0, 10, 0)
+        btn_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        btn_layout.addWidget(btn)
+        btn_widget.setLayout(btn_layout)
+
+        btn.clicked.connect(self.handleButtonClick)
+
+        return btn_widget
+
+    def handleButtonClick(self):
+        for picture in self.picture_list:
+            path = f"{picture.getFileName().split('/')[0]}/{picture.getFileName().split('/')[1]}"
+            file_name = picture.getFileName().split("/")[-1]
+            rating = picture.getRating()
+            new_name = f"{path}/{title_name[5-rating]}_{file_name}"
+
+            os.rename(picture.getFileName(), new_name)
+
+        message_box = self.messgeBox()
+        message_box.exec()
+
     def loadImg(self, file_name, w=300, h=350, is_picture=True):
         # print(f"Loading image {file_name}")
 
@@ -244,7 +302,7 @@ class MyApp(QWidget):
         qpixmap = QPixmap()
 
         if is_picture:
-            picture = self.PictureInfo(file_name)
+            picture = PictureInfo(file_name)
             img_data = picture.getThumbnail()
             rating = picture.getRating()
             qpixmap.loadFromData(img_data)
@@ -267,31 +325,28 @@ class MyApp(QWidget):
         else:
             return label
 
-    class PictureInfo:
-        def __init__(self, file_name):
-            self.file_name = file_name
-            if self.isImage(file_name):
-                self.imgData = Image(file_name)
 
-        def getFileName(self):
-            return self.file_name
+class PictureInfo:
+    def __init__(self, file_name):
+        self.file_name = file_name
+        if self.isImage(file_name):
+            self.imgData = Image(file_name)
 
-        def getThumbnail(self):
-            # my_image = exifImage(self.imgData)
-            return self.imgData.read_thumbnail()
+    def getFileName(self):
+        return self.file_name
 
-        def getRating(self):
-            xmp_data = self.imgData.read_xmp()
-            # print(f"xmpdata {xmp_data['Xmp.xmp.Rating']}")
-            print(
-                int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0
-            )
-            return (
-                int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0
-            )
+    def getThumbnail(self):
+        # my_image = exifImage(self.imgData)
+        return self.imgData.read_thumbnail()
 
-        def isImage(self, file_name):
-            return file_name.lower().endswith(image_format)
+    def getRating(self):
+        xmp_data = self.imgData.read_xmp()
+        # print(f"xmpdata {xmp_data['Xmp.xmp.Rating']}")
+        print(int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0)
+        return int(xmp_data["Xmp.xmp.Rating"]) if "Xmp.xmp.Rating" in xmp_data else 0
+
+    def isImage(self, file_name):
+        return file_name.lower().endswith(image_format)
 
 
 if __name__ == "__main__":
