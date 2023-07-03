@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 import monitorInfo
 import ctypes
 from pyexiv2 import Image
@@ -25,8 +26,8 @@ class MyApp(QWidget):
         self.setStyleSheet("background-color: #1A1A1A;")
         self.setWindowTitle("Python QLabel")
         self.setWindowIcon(QIcon("icons/icon.png"))
-        self.setMaximumWidth(1500)
-        self.setMinimumWidth(1500)
+        self.setMaximumWidth(1520)
+        self.setMinimumWidth(1520)
         self.setMaximumHeight(monitorInfo.getWorkAreaHeight() - 32)
         self.setMinimumHeight(monitorInfo.getWorkAreaHeight() - 32)
 
@@ -41,11 +42,18 @@ class MyApp(QWidget):
             Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
         )
 
-        gallery_layout = self.galleryLayout()
-        scroll_area = self.scollArea(gallery_layout)
+        layout = QVBoxLayout()
+
+        for score in range(0, 6):
+            layout.addLayout(
+                self.galleryLayout(
+                    self.ratingFilter(score, self.getPictureList("./images"))
+                )
+            )
+
+        scroll_area = self.scollArea(layout)
 
         main_layout.addWidget(scroll_area)
-        # main_layout.addLayout(gallery_layout)
 
         self.setLayout(main_layout)
 
@@ -63,45 +71,58 @@ class MyApp(QWidget):
 
         return scroll_area
 
-    def ratingFilter(self, score):
-        return filter(lambda x: (x.getRating() == score), self.picture_list)
+    def ratingFilter(self, score, picture_list):
+        return list(filter(lambda x: (x.getRating() == score), picture_list))
 
-    def galleryLayout(self):
+    def getPictureList(self, path="./images/"):
+        picture_list = []
+        files = os.listdir(path)
+
+        for file in files:
+            picture_info = self.PictureInfo(f"{path}/{file}")
+            picture_list.append(picture_info)
+
+        return picture_list
+
+    def galleryLayout(self, picture_list=[]):
         gallery_layout = QVBoxLayout()
         gallery_layout.setContentsMargins(0, 0, 0, 0)
         gallery_layout.setSpacing(0)
 
-        title = QLabel("Score")
+        title = QLabel(str(picture_list[0].getRating()))
         title.setContentsMargins(20, 0, 0, 0)
         title.setFixedSize(1500, 50)  # width, height
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignLeft)
         # title.setText
         title.setStyleSheet(
             "background-color: #1A1A1A; color : white; font-weight:black; font-size: 20px"
         )
+        # title = self.starWidget(picture_list[0].getRating())
         # title.setFixedHeight(10)
 
         img_layout = QGridLayout()
         img_layout.setSpacing(0)
         img_layout.setContentsMargins(0, 0, 0, 0)
 
-        files = os.listdir("./images")
-        self.picture_list = []
-
-        # even_numbers_iterator = filter(lambda x: (x%2 == 0), numbers)
-        for file in files:
-            picture_info = self.PictureInfo(f"./images/{file}")
-            self.picture_list.append(picture_info)
-
         row, column = 0, 0
-        for file_name in files:
-            img_layout.addWidget(self.imgWidget(f"./images/{file_name}"), row, column)
+        for i in range(0, math.ceil(len(picture_list) / 5) * 5):
+            if i < len(picture_list):
+                picture = picture_list[i]
+                widget = self.imgWidget(picture.getFileName())
+            else:
+                widget = QWidget()
+                widget.setFixedWidth(300)
+                widget.setFixedHeight(400)
+                # widget.setContentsMargins(2, 2, 2, 2)
+                if i == len(picture_list):
+                    widget.setStyleSheet("border-left: 1px solid #696969")
+
+            img_layout.addWidget(widget, row, column)
+
             column += 1
-            print()
             if column == 5:
                 row += 1
-                column = 0
-            # img_layout.addWidget(img_label, row, column)
+                column = 0  # row, column = 0, 0
 
         gallery_layout.addWidget(title)
         gallery_layout.addLayout(img_layout)
@@ -110,7 +131,7 @@ class MyApp(QWidget):
 
     def imgWidget(self, file_name):
         widget = QWidget()
-        widget.setFixedWidth(300)
+        widget.setFixedWidth(296)
         widget.setFixedHeight(350)
         widget.setStyleSheet("border: 0px")
 
@@ -124,7 +145,7 @@ class MyApp(QWidget):
 
         rating = self.starWidget(_rating)
         rating.setStyleSheet("color:black; border: 0px")
-        rating.setFixedSize(300, 50)
+        rating.setFixedSize(296, 50)
 
         outer_layout = QVBoxLayout()
         outer_layout.addWidget(widget)
@@ -133,7 +154,7 @@ class MyApp(QWidget):
 
         outer_box = QWidget()
         outer_box.setLayout(outer_layout)
-        outer_box.setFixedWidth(303)
+        outer_box.setFixedWidth(300)
         outer_box.setFixedHeight(400)
         outer_box.setStyleSheet("background-color: #1A1A1A; border: 1px solid #696969;")
 
@@ -224,7 +245,6 @@ class MyApp(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    print(sys.argv)
 
     my_app_id = "michael.lr_rename.v1.0"
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
