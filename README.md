@@ -1,6 +1,9 @@
-# lr_rename
+<p align="center">
+  <img width="100" src="./icons/sloth.png">
+  <h1 align="center">Sloth Rating Toolkit</h1>
+</p>
 
-## 目標
-- 針對 lr 的 rating 進行資料夾分類
-- GUI 協助重新設定照片
-- 資料夾命名功能
+## 當前功能
+
+- 針對 lightroom 的 rating 進行分類，顯示在 GUI 上
+- 透過 GUI 輸出照片到指定資料夾
