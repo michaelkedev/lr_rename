@@ -1,6 +1,7 @@
 import os
 import sys
 import math
+import shutil
 import monitorInfo
 import ctypes
 from pyexiv2 import Image
@@ -78,11 +79,9 @@ class MyApp(QWidget):
         layout.setSpacing(10)
 
         for score in range(0, 6):
-            layout.addLayout(
-                self.galleryLayout(
-                    self.ratingFilter(5 - score, self.getPictureList("./images"))
-                )
-            )
+            rating_list = self.ratingFilter(5 - score, self.getPictureList("./images"))
+            if rating_list:
+                layout.addLayout(self.galleryLayout(rating_list))
 
         btn_widget = self.buttonWidget(self.outputToSelectedFolder)
         scroll_area = self.scollArea(layout)
@@ -127,6 +126,7 @@ class MyApp(QWidget):
         files = os.listdir(path)
 
         for file in files:
+            # print(file)
             picture_info = PictureInfo(f"{path}/{file}")
             self.picture_list.append(picture_info)
 
@@ -304,8 +304,8 @@ class MyApp(QWidget):
                 rating = picture.getRating()
                 new_name = f"{select_folder}/{title_name[5-rating]}_{file_name}"
 
-                print(new_name)
-                os.rename(picture.getFileName(), new_name)
+                # print(new_name)
+                shutil.copy(picture.getFileName(), new_name)
 
             message_box = self.messgeBox()
             message_box.exec()
